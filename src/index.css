@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "PlainMedium";
+  src: url("/fonts/Plain-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100svh;
+  background: #050505;
+}
+
+.work-grid-overlay {
+  background-image:
+    linear-gradient(rgba(245, 240, 232, 0.13) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(245, 240, 232, 0.13) 1px, transparent 1px);
+  background-size: 58px 58px;
+  animation: work-grid-drift 18s linear infinite;
+}
+
+.work-noise-overlay {
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.42) 0 1px, transparent 1px),
+    radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.26) 0 1px, transparent 1px);
+  background-size: 23px 23px, 31px 31px;
+  animation: work-noise-shift 1.8s steps(2, end) infinite;
+}
+
+.not-found-astronaut {
+  animation: astronaut-drift 7s ease-in-out infinite;
+}
+
+@keyframes work-grid-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+
+  to {
+    transform: translate3d(58px, 58px, 0);
+  }
+}
+
+@keyframes work-noise-shift {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(-1.5%, 1%, 0);
+  }
+
+  100% {
+    transform: translate3d(1%, -1.5%, 0);
+  }
+}
+
+@keyframes astronaut-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) rotate(-2deg);
+  }
+
+  50% {
+    transform: translate3d(0.8rem, -1rem, 0) rotate(2deg);
+  }
+}

@@ -10,11 +10,14 @@ import {
 import { gsap } from 'gsap'
 import Navbar from './components/Navbar/Navbar'
 
-const WorkSection = lazy(() => import('./components/Work/WorkSection'))
-const AboutSection = lazy(() => import('./components/About/AboutSection'))
-const ContactFooterSection = lazy(
-  () => import('./components/Contact/ContactFooterSection'),
-)
+const loadWorkSection = () => import('./components/Work/WorkSection')
+const loadAboutSection = () => import('./components/About/AboutSection')
+const loadContactFooterSection = () =>
+  import('./components/Contact/ContactFooterSection')
+
+const WorkSection = lazy(loadWorkSection)
+const AboutSection = lazy(loadAboutSection)
+const ContactFooterSection = lazy(loadContactFooterSection)
 
 const badges = [
   '● AVAILABLE FOR WORK',
@@ -267,6 +270,7 @@ function PageLoader({ onComplete }) {
 
 function App() {
   const [isLoaderDone, setIsLoaderDone] = useState(false)
+  const [shouldRenderSections, setShouldRenderSections] = useState(false)
   const isNotFound =
     typeof window !== 'undefined' &&
     !['/', '/index.html'].includes(window.location.pathname)
@@ -299,15 +303,15 @@ function App() {
       gsap.set(labelRef.current, {
         y: 28,
         opacity: 0,
-        filter: 'blur(10px)',
       })
       gsap.set(titleRef.current, {
-        scale: 0.965,
-        filter: 'blur(14px)',
+        y: 18,
+        scale: 0.992,
+        opacity: 0,
       })
       gsap.set(lineRefs.current, {
-        yPercent: 118,
-        clipPath: 'inset(100% 0% 0% 0%)',
+        yPercent: 108,
+        opacity: 0,
       })
       gsap.set(introRef.current, {
         x: -42,
@@ -327,15 +331,15 @@ function App() {
         .to(labelRef.current, {
           y: 0,
           opacity: 1,
-          filter: 'blur(0px)',
-          duration: 1.15,
+          duration: 1,
         })
         .to(
           titleRef.current,
           {
+            y: 0,
             scale: 1,
-            filter: 'blur(0px)',
-            duration: 1.55,
+            opacity: 1,
+            duration: 1.05,
           },
           '<0.1',
         )
@@ -343,9 +347,9 @@ function App() {
           lineRefs.current,
           {
             yPercent: 0,
-            clipPath: 'inset(0% 0% 0% 0%)',
-            duration: 1.35,
-            stagger: 0.12,
+            opacity: 1,
+            duration: 0.95,
+            stagger: 0.08,
           },
           '<0.1',
         )
@@ -395,6 +399,52 @@ function App() {
     return () => ctx.revert()
   }, [isLoaderDone, isNotFound])
 
+  useEffect(() => {
+    if (!isLoaderDone || isNotFound) {
+      return undefined
+    }
+
+    let isCancelled = false
+    let timeoutId = null
+    let idleId = null
+
+    const loadDeferredSections = async () => {
+      await Promise.all([
+        loadWorkSection(),
+        loadAboutSection(),
+        loadContactFooterSection(),
+      ])
+
+      if (!isCancelled) {
+        setShouldRenderSections(true)
+      }
+    }
+
+    const scheduleLoad = () => {
+      if ('requestIdleCallback' in window) {
+        idleId = window.requestIdleCallback(loadDeferredSections, {
+          timeout: 1800,
+        })
+      } else {
+        timeoutId = window.setTimeout(loadDeferredSections, 1200)
+      }
+    }
+
+    timeoutId = window.setTimeout(scheduleLoad, 900)
+
+    return () => {
+      isCancelled = true
+
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId)
+      }
+
+      if (idleId !== null && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleId)
+      }
+    }
+  }, [isLoaderDone, isNotFound])
+
   if (isNotFound) {
     return <NotFoundPage />
   }
@@ -420,7 +470,7 @@ function App() {
 
             <h1
               ref={titleRef}
-              className="font-[PlainMedium] text-[clamp(3.35rem,13.4vw,14rem)] font-medium uppercase leading-[0.75] tracking-[-0.078em] text-[#f5f0e8] drop-shadow-[0_24px_80px_rgba(0,0,0,0.38)]"
+              className="font-[PlainMedium] text-[clamp(3.35rem,13.4vw,14rem)] font-medium uppercase leading-[0.75] tracking-[-0.078em] text-[#f5f0e8] will-change-transform"
             >
               <span className="block overflow-hidden pb-[0.08em]">
                 <span ref={(element) => setLineRef(element, 0)} className="block">
@@ -485,17 +535,27 @@ function App() {
         className="h-[16vh] min-h-24 bg-black"
       />
 
-      <Suspense fallback={<SectionFallback className="min-h-svh" />}>
-        <WorkSection />
-      </Suspense>
+      {shouldRenderSections ? (
+        <>
+          <Suspense fallback={<SectionFallback className="min-h-svh" />}>
+            <WorkSection />
+          </Suspense>
 
-      <Suspense fallback={<SectionFallback className="min-h-svh" />}>
-        <AboutSection />
-      </Suspense>
+          <Suspense fallback={<SectionFallback className="min-h-svh" />}>
+            <AboutSection />
+          </Suspense>
 
-      <Suspense fallback={<SectionFallback className="min-h-[90svh]" />}>
-        <ContactFooterSection />
-      </Suspense>
+          <Suspense fallback={<SectionFallback className="min-h-[90svh]" />}>
+            <ContactFooterSection />
+          </Suspense>
+        </>
+      ) : (
+        <>
+          <SectionFallback className="min-h-svh" />
+          <SectionFallback className="min-h-svh" />
+          <SectionFallback className="min-h-[90svh]" />
+        </>
+      )}
     </main>
   )
 }

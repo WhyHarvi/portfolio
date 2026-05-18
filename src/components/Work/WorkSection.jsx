@@ -124,12 +124,12 @@ function ProjectImage({ project, index, className = '' }) {
         className={`absolute inset-0 bg-gradient-to-br ${project.palette} opacity-90`}
       />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_28%_20%,rgba(255,255,255,0.34),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.14),transparent_42%)]" />
-      <div className="absolute inset-x-5 top-5 flex items-center gap-2 rounded-full border border-white/12 bg-black/22 px-4 py-3 backdrop-blur-md">
+      <div className="absolute inset-x-5 top-5 flex items-center gap-2 rounded-full border border-white/12 bg-black/22 px-4 py-3 sm:backdrop-blur-md">
         <span className="h-2.5 w-2.5 rounded-full bg-white/70" />
         <span className="h-2.5 w-2.5 rounded-full bg-white/35" />
         <span className="h-2.5 w-2.5 rounded-full bg-white/20" />
       </div>
-      <div className="absolute bottom-4 left-4 right-4 rounded-[1.1rem] border border-white/12 bg-black/28 p-3 backdrop-blur-lg sm:bottom-5 sm:left-5 sm:right-5 sm:p-4">
+      <div className="absolute bottom-4 left-4 right-4 rounded-[1.1rem] border border-white/12 bg-black/28 p-3 sm:bottom-5 sm:left-5 sm:right-5 sm:p-4 sm:backdrop-blur-lg">
         <div className="mb-4 flex items-end justify-between gap-4">
           <div>
             <div className="mb-2 h-2 w-16 rounded-full bg-white/48" />
@@ -338,7 +338,7 @@ function WorkCard({
   return (
     <article
       ref={(element) => setCardRef(element, index)}
-      className={`work-card absolute inset-x-0 top-0 mx-auto h-full max-w-6xl overflow-hidden rounded-[1.75rem] border border-white/[0.13] bg-[#10100f]/62 p-3 text-[#f5f0e8] shadow-[0_30px_110px_rgba(0,0,0,0.48)] backdrop-blur-2xl sm:p-4 lg:p-5 ${
+      className={`work-card absolute inset-x-0 top-0 mx-auto h-full max-w-6xl overflow-hidden rounded-[1.75rem] border border-white/[0.13] bg-[#10100f]/62 p-3 text-[#f5f0e8] shadow-[0_30px_110px_rgba(0,0,0,0.48)] sm:backdrop-blur-2xl sm:p-4 lg:p-5 ${
         isActive ? 'pointer-events-auto' : 'pointer-events-none'
       }`}
       style={{ zIndex: index + 1 }}
@@ -420,7 +420,7 @@ function WorkCard({
         <motion.button
           ref={buttonRef}
           type="button"
-          className="pointer-events-auto absolute right-5 top-5 z-30 grid h-12 w-12 place-items-center rounded-full border border-white/14 bg-[#f5f0e8]/10 text-[#f5f0e8] shadow-[0_18px_48px_rgba(0,0,0,0.28)] backdrop-blur-md transition-[background-color,color,border-color] duration-300 hover:border-white/25 hover:bg-[#f5f0e8] hover:text-black sm:right-7 sm:top-7"
+          className="pointer-events-auto absolute right-5 top-5 z-30 grid h-12 w-12 place-items-center rounded-full border border-white/14 bg-[#f5f0e8]/10 text-[#f5f0e8] shadow-[0_18px_48px_rgba(0,0,0,0.28)] transition-[background-color,color,border-color] duration-300 hover:border-white/25 hover:bg-[#f5f0e8] hover:text-black sm:right-7 sm:top-7 sm:backdrop-blur-md"
           aria-label={`Open ${project.name} project`}
           onClick={() => onOpen(project, index)}
           onPointerMove={handleMagneticMove}
@@ -480,18 +480,19 @@ function WorkSection() {
 
   useLayoutEffect(() => {
     const ctx = gsap.context(() => {
+      const isMobile = window.innerWidth < 768
       const cards = cardRefs.current.filter(Boolean)
       const images = imageRefs.current.filter(Boolean)
 
       gsap.set(headingRef.current, {
         yPercent: 120,
         opacity: 0,
-        filter: 'blur(12px)',
+        ...(isMobile ? {} : { filter: 'blur(12px)' }),
       })
       gsap.to(headingRef.current, {
         yPercent: 0,
         opacity: 1,
-        filter: 'blur(0px)',
+        ...(isMobile ? {} : { filter: 'blur(0px)' }),
         duration: 1.1,
         ease: 'power4.out',
         scrollTrigger: {
@@ -504,21 +505,21 @@ function WorkSection() {
       gsap.set(cards, {
         transformOrigin: 'center top',
         force3D: true,
-        willChange: 'transform, opacity, filter',
+        willChange: isMobile ? 'transform, opacity' : 'transform, opacity, filter',
       })
       gsap.set(cards.slice(1), {
         yPercent: 112,
         y: 0,
         scale: 0.96,
         opacity: 0,
-        filter: 'blur(12px)',
+        ...(isMobile ? {} : { filter: 'blur(12px)' }),
       })
       gsap.set(cards[0], {
         yPercent: 40,
         y: 0,
         scale: 1,
         opacity: 1,
-        filter: 'blur(0px)',
+        ...(isMobile ? {} : { filter: 'blur(0px)' }),
       })
       gsap.set(images, {
         y: 26,
@@ -534,8 +535,8 @@ function WorkSection() {
           start: 'top top',
           end: `+=${projects.length * 95}%`,
           pin: true,
-          scrub: 0.8,
-          anticipatePin: 1,
+          scrub: isMobile ? 0.45 : 0.8,
+          anticipatePin: isMobile ? 0 : 1,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             const nextIndex = Math.min(
@@ -566,7 +567,7 @@ function WorkSection() {
               y: 0,
               scale: 0.92 - index * 0.025,
               opacity: 0.68,
-              filter: 'blur(1.5px)',
+              ...(isMobile ? {} : { filter: 'blur(1.5px)' }),
               duration: 0.88,
             },
             position,
@@ -578,7 +579,7 @@ function WorkSection() {
               y: index * -10,
               scale: 1,
               opacity: 1,
-              filter: 'blur(0px)',
+              ...(isMobile ? {} : { filter: 'blur(0px)' }),
               duration: 0.88,
             },
             position,

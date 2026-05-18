@@ -17,54 +17,47 @@ function Navbar() {
   const closeButtonRef = useRef(null)
   const menuLinkRefs = useRef([])
   const menuTimelineRef = useRef(null)
-  const scrollAnimationRef = useRef(null)
+  const activeLinkRef = useRef('Home')
+  const activeTabRef = useRef('Home')
+  const isScrolledRef = useRef(false)
+  const scrollTickingRef = useRef(false)
 
   const setMenuLinkRef = (element, index) => {
     menuLinkRefs.current[index] = element
   }
 
+  const updateNavState = (nextLabel) => {
+    if (activeLinkRef.current !== nextLabel) {
+      activeLinkRef.current = nextLabel
+      setActiveLink(nextLabel)
+    }
+
+    if (activeTabRef.current !== nextLabel) {
+      activeTabRef.current = nextLabel
+      setActiveTab(nextLabel)
+    }
+  }
+
   const handleNavClick = (link, event) => {
     event?.preventDefault()
-    setActiveLink(link.label)
-    setActiveTab(link.label)
+    updateNavState(link.label)
 
     const section = document.querySelector(link.href)
 
     if (section) {
-      const startY = window.scrollY
-      const targetY = section.getBoundingClientRect().top + window.scrollY
-      const distance = targetY - startY
-      const duration = 1350
-      let startTime = null
+      const prefersReducedMotion = window.matchMedia(
+        '(prefers-reduced-motion: reduce)',
+      ).matches
+      const navOffset = window.innerWidth < 1024 ? 76 : 92
+      const targetY = Math.max(
+        0,
+        section.getBoundingClientRect().top + window.scrollY - navOffset,
+      )
 
-      if (scrollAnimationRef.current) {
-        cancelAnimationFrame(scrollAnimationRef.current)
-      }
-
-      const easeInOutCubic = (progress) =>
-        progress < 0.5
-          ? 4 * progress * progress * progress
-          : 1 - Math.pow(-2 * progress + 2, 3) / 2
-
-      const animateScroll = (currentTime) => {
-        if (startTime === null) {
-          startTime = currentTime
-        }
-
-        const elapsed = currentTime - startTime
-        const progress = Math.min(elapsed / duration, 1)
-        const easedProgress = easeInOutCubic(progress)
-
-        window.scrollTo(0, startY + distance * easedProgress)
-
-        if (progress < 1) {
-          scrollAnimationRef.current = requestAnimationFrame(animateScroll)
-        } else {
-          scrollAnimationRef.current = null
-        }
-      }
-
-      scrollAnimationRef.current = requestAnimationFrame(animateScroll)
+      window.scrollTo({
+        top: targetY,
+        behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      })
       window.history.pushState(null, '', link.href)
     }
   }
@@ -76,7 +69,13 @@ function Navbar() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 64)
+      scrollTickingRef.current = false
+
+      const nextIsScrolled = window.scrollY > 64
+      if (isScrolledRef.current !== nextIsScrolled) {
+        isScrolledRef.current = nextIsScrolled
+        setIsScrolled(nextIsScrolled)
+      }
 
       const activeOffset = window.scrollY + window.innerHeight * 0.42
       const currentSection = [...navLinks].reverse().find((link) => {
@@ -92,15 +91,21 @@ function Navbar() {
       })
 
       if (currentSection) {
-        setActiveLink(currentSection.label)
-        setActiveTab(currentSection.label)
+        updateNavState(currentSection.label)
+      }
+    }
+
+    const onScroll = () => {
+      if (!scrollTickingRef.current) {
+        scrollTickingRef.current = true
+        requestAnimationFrame(handleScroll)
       }
     }
 
     handleScroll()
-    window.addEventListener('scroll', handleScroll, { passive: true })
+    window.addEventListener('scroll', onScroll, { passive: true })
 
-    return () => window.removeEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   useEffect(() => {
@@ -184,14 +189,6 @@ function Navbar() {
     }
   }, [isMenuOpen])
 
-  useEffect(() => {
-    return () => {
-      if (scrollAnimationRef.current) {
-        cancelAnimationFrame(scrollAnimationRef.current)
-      }
-    }
-  }, [])
-
   return (
     <>
       <header
@@ -273,7 +270,7 @@ function Navbar() {
 
       <div
         ref={overlayRef}
-        className="fixed inset-0 z-[95] overflow-hidden bg-[#02090b]/97 text-white backdrop-blur-xl lg:hidden"
+        className="fixed inset-0 z-[95] overflow-hidden bg-[#02090b]/97 text-white lg:hidden"
         aria-hidden={!isMenuOpen}
       >
         <div
@@ -281,7 +278,7 @@ function Navbar() {
           className="relative flex min-h-svh flex-col px-5 pb-6 pt-5 sm:px-8"
         >
           <div className="flex items-center justify-between gap-4">
-            <div className="flex max-w-[calc(100%-4rem)] gap-2 overflow-x-auto rounded-full border border-white/10 bg-white/[0.06] p-1 backdrop-blur">
+            <div className="flex max-w-[calc(100%-4rem)] gap-2 overflow-x-auto rounded-full border border-white/10 bg-white/[0.06] p-1 sm:backdrop-blur">
               {overlayTabs.map((tab) => {
                 const isActive = activeTab === tab.label
 
